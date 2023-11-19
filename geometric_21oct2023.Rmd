@@ -1,0 +1,276 @@
+---
+title: "Several examples of Geometric Probability with R"
+author: "Serafim Petrov"
+date: "2023-10-21"
+output:
+  html_document: default
+---
+
+Geometric probability is a type of study that measures outcomes in terms of geometric proportions. It dates back to 18th century for the problem of Buffon's needle; and developed in Monte Carlo simulations-based approaches for problems such as integral estimation with the hit-and-miss method.
+
+https://en.wikipedia.org/wiki/Buffon%27s_needle_problem
+
+# Example 1:
+It was an accident on a electricity line from 100 to 150-m line segment. What is the probability that the incident happened on the 120-130-m line segment?
+
+
+```{r}
+# Create a blank plot
+plot(0, type = "n", xlim = c(90, 160), ylim = c(0, 0), xlab = "line length in meters", ylab = "")
+
+lines(c(90, 160), c(0, 0), col = "grey", lwd = 5, lty = 'dashed')
+lines(c(100, 150), c(0, 0), col = "black", lwd = 7)
+lines(c(120, 130), c(0, 0), col = "red", lwd = 10)
+points(c(120, 130), c(0, 0), col = "red", pch = 20)
+
+```
+
+The answer is: assuming a uniform distribution, the probability is the proportion of the length of the red line to the length of the black line: (130 - 120)/(150 - 100) = 1/5
+
+
+# Example 2:
+Pi estimation with the hit-and-miss method. Consider a circle with the radius = 1 inscribed in a square with a side = 2: the area of the square is 4; and the area of the circle is pi. Therefore, the proportion is area_circle/area_square = pi/4. 
+
+Let x and y be independent and uniformly distributed random variables on the interval [-1, 1], that is each pair represents a coordinate inside of the square. Then the proportion of the coordinates inside of the circle x^2 + y^2 <= 1^2 to the all coordinates inside o the square is pi/4.
+
+```{r}
+set.seed(2024)
+n <- 10000
+circle <- (runif(n, -1, 1)^2 + runif(n, -1, 1)^2 <= 1)
+pi.est <- mean(circle) * 4
+replicate(10000, mean((runif(n)^2 + runif(n)^2 <= 1))*4) |> mean()
+pi
+
+
+
+# Create a blank plot
+plot(c(-2, 2), c(-2, 2), type = "n", xlab = "", ylab = "", asp = 1)
+
+# Plot the square
+square <- cbind(c(-1, 1, 1, -1, -1), c(-1, -1, 1, 1, -1))
+lines(square, col = "black")
+
+# Plot the inscribed circle
+theta <- seq(0, 2 * pi, length.out = 100)
+circle_x <- cos(theta)
+circle_y <- sin(theta)
+circle_x <- circle_x * 1  # Scale the circle's x-coordinates by the radius
+circle_y <- circle_y * 1  # Scale the circle's y-coordinates by the radius
+lines(circle_x, circle_y, col = "red")
+
+# Add coordinates
+text(1.2, 1.2, "(1, 1)", col = "black")
+text(-1.2, 1.2, "(-1, 1)", col = "black")
+text(1.2, -1.2, "(1, -1)", col = "black")
+text(-1.2, -1.2, "(-1, -1)", col = "black")
+
+# Shade the circle
+polygon(circle_x, circle_y, col = "pink", border = NA)
+
+
+# Add X and Y coordinate axes
+abline(v = 0, col = "black")  # Vertical line at X = 0
+abline(h = 0, col = "black")  # Horizontal line at Y = 0
+```
+
+
+<!-- # Example 3: -->
+
+<!-- x + y < 2 -->
+
+<!-- ```{r} -->
+<!-- # Create a blank plot -->
+<!-- plot(c(0, 5), c(0, 5), type = "n", xlab = "", ylab = "", asp = 1) -->
+
+<!-- # Define the coordinates of the square -->
+<!-- square <- rbind(c(0, 0), c(0, 5), c(5, 5), c(5, 0), c(0, 0)) -->
+
+<!-- # Plot the square -->
+<!-- lines(square, col = "black") -->
+
+<!-- # Add the line x*y < 2 -->
+<!-- x <- seq(0, 10, length.out = 100) -->
+<!-- y <- 2-x -->
+<!-- y[y == Inf] = 100 -->
+<!-- lines(x, y, col = "red") -->
+<!-- ``` -->
+
+
+# Example 3:
+xy < 2
+
+```{r}
+mc_integral <- function(ftn, a, b, n){
+  u = runif(n, a, b)
+  x = sapply(u, ftn)
+  return(mean(x)*(b-a))
+}
+
+f1 <- function(x) 2/x
+a1 <- 2/5
+b1 <-  5
+n1 <- 100000
+
+res_A <- a1*b1
+res_B <- mc_integral(f1, a1, b1, n1)
+res_C <- b1*b1 - (res_B + res_A)
+
+res_C/(b1*b1) # xy > 2
+
+
+# Create a blank plot
+plot(c(0, 5), c(0, 5), type = "n", xlab = "X", ylab = "Y", asp = 1)
+
+# Define the coordinates of the square
+square <- rbind(c(0, 0), c(0, 5), c(5, 5), c(5, 0), c(0, 0))
+
+# Plot the square
+lines(square, col = "black")
+
+# Add the line x*y < 2
+x <- seq(0, 10, length.out = 100)
+y <- 2 / x
+y[y == Inf] = 100
+lines(x, y, col = "red")
+abline(v = 2/5, lty = "dashed", col = "blue")
+
+
+
+```
+
+$$
+\int_{.4}^{5} 2/x dx= 2 ln(|x|) |_{.4}^{5} = 2(ln(5) - ln(.4)) \approx 5.051457
+
+$$
+$$
+\int_{.4}^{5} \int_{2/x}^{5} dxdy = \int_{.4}^{5} (5-2/x) dx= (5x - 2ln(|x|))|_{.4}^{5} = 
+25 - 2ln(5) - 2 +2ln(.4) \approx 17.94854
+$$
+
+
+# Example 4:
+meeting problem: 
+
+
+```{r}
+wait1 = 30
+wait2 = 30
+n = 1000
+
+set.seed(2024)
+start_time <- Sys.time()
+ex3 <- function(waiting1 = 30) {
+  x = runif(1, 0, 90)
+  y = runif(1, 30, 120)
+  
+  condition1 = x < y & x + waiting1 > y
+  condition2 = y < x & y + waiting1 > x
+  
+  return(condition1 || condition2)
+}
+replicate(n, mean(replicate(n, ex3(waiting1 = wait1)))) |> mean()
+print(Sys.time() - start_time)
+
+
+```
+
+
+$$
+A = \int_{0}^{90} \int_{y=x+30}^{y=120} dxdy= \int_{0}^{90} (120 -x-30)dx = -(x^2/2 +90)|_{0}^{90} = 4050
+$$
+
+$$
+B = \int_{60}^{90}\int_{y=30}^{y=x-30}dxdy = \int_{60}^{90} (x-60) dx = (x^2/2 - 60x)|_{60}^{90} = 450 
+$$
+$$
+C = T - A - B = 8100 - 4050 - 450 = 3600
+$$
+Find how long to wait to reach the prob of 80%
+
+```{r}
+set.seed(2024)
+for (i in 20:60) {print(c(i, mean(replicate(n,ex3(i)))))}
+set.seed(2024)
+sapply(20:60,function(x) mean(replicate(n,ex3(x))))
+```
+
+
+Arrive in exact time?
+
+
+```{r}
+set.seed(2023)
+ex1 <- function(n){
+  x = as.integer(runif(n, 0, 90))
+  y = as.integer(runif(n, 30, 120))
+  sum(x == y)/n 
+}
+
+replicate(10000, ex1(10000)) |> mean()
+
+```
+
+
+
+
+
+
+
+
+
+
+
+# Example 5:
+3-dimensional problem:
+
+```{r}
+# Install and load the required packages
+library(plotly)
+
+# Define the radius of the sphere
+radius <- 1
+
+# Generate data points for the surface of the sphere
+n_points <- 100
+theta <- seq(0, 2 * pi, length.out = n_points)
+phi <- seq(0, pi, length.out = n_points)
+x_sphere <- radius * outer(cos(theta), sin(phi))
+y_sphere <- radius * outer(sin(theta), sin(phi))
+z_sphere <- radius * outer(rep(1, n_points), cos(phi))
+
+# Define the coordinates of the cube vertices
+cube_vertices <- matrix(c(
+  -1, -1, -1,
+  -1, -1, 1,
+  -1, 1, -1,
+  -1, 1, 1,
+  1, -1, -1,
+  1, -1, 1,
+  1, 1, -1,
+  1, 1, 1
+), ncol = 3, byrow = TRUE)
+
+# Create a 3D scatter plot using Plotly
+plot_ly() %>%
+  add_trace(
+    x = cube_vertices[c(1, 2, 4, 3, 1), 1],
+    y = cube_vertices[c(1, 2, 4, 3, 1), 2],
+    z = cube_vertices[c(1, 2, 4, 3, 1), 3],
+    type = "scatter3d", mode = "lines",
+    line = list(color = "black", width = 2)
+  ) %>%
+  add_trace(
+    x = c(x_sphere),
+    y = c(y_sphere),
+    z = c(z_sphere),
+    type = "scatter3d", mode = "markers",
+    marker = list(color = "red", size = 2),
+    name = "Sphere"
+  ) %>%
+  layout(
+    scene = list(aspectmode = "cube"),
+    title = "Sphere Inside Cube"
+  )
+```
+
+
